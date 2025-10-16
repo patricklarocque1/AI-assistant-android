@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.aiassistant.chat.viewmodel.ChatViewModel
@@ -125,8 +126,8 @@ fun ChatScreen(
                         placeholder = { Text("Type your message...") },
                         shape = RoundedCornerShape(24.dp),
                         colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = MaterialTheme.colorScheme.transparent,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.transparent
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
                         ),
                         enabled = !isLoading
                     )

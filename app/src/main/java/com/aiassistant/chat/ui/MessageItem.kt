@@ -16,7 +16,7 @@ import java.util.*
  */
 @Composable
 fun MessageItem(message: ChatMessage) {
-    val alignment = if (message.isUser) Alignment.End else Alignment.Start
+    val alignment = if (message.isUser) Alignment.CenterEnd else Alignment.CenterStart
     val backgroundColor = if (message.isUser) {
         MaterialTheme.colorScheme.primaryContainer
     } else {
