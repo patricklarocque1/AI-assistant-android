@@ -1,5 +1,33 @@
 # Android AI Assistant - Build Guide
 
+## Version Management
+
+This project uses Gradle Version Catalogs for centralized dependency management. All versions are defined in `gradle/libs.versions.toml`.
+
+### Current Versions
+- **Gradle**: 8.2
+- **AGP** (Android Gradle Plugin): 8.1.4
+- **Kotlin**: 1.9.0
+- **Compose Compiler**: 1.5.1
+
+### Updating Versions
+
+To update dependency versions, edit `gradle/libs.versions.toml`:
+
+```toml
+[versions]
+agp = "8.1.4"        # Android Gradle Plugin
+kotlin = "1.9.0"      # Kotlin version
+retrofit = "2.9.0"    # Retrofit version
+# ... other versions
+```
+
+Benefits of using Version Catalog:
+- Single source of truth for all dependency versions
+- Type-safe accessors in build scripts
+- Easy to update versions across multiple modules
+- Better IDE support
+
 ## Quick Start
 
 ### Option 1: Android Studio (Recommended)

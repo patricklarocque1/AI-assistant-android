@@ -14,11 +14,16 @@ An Android AI assistant chat application featuring the latest Android developmen
 
 ## Technologies Used
 
+### Build System
+- **Gradle 8.2**: Modern build automation
+- **AGP 8.1.4**: Android Gradle Plugin
+- **Version Catalog**: Centralized dependency management via `libs.versions.toml`
+
 ### Core Technologies
-- **Kotlin**: Modern programming language for Android
+- **Kotlin 1.9.0**: Modern programming language for Android
 - **Jetpack Compose**: Declarative UI toolkit
 - **Material 3**: Latest Material Design components
-- **Coroutines**: Asynchronous programming
+- **Coroutines 1.7.3**: Asynchronous programming
 
 ### Architecture Components
 - **ViewModel**: Lifecycle-aware UI data management
@@ -26,8 +31,8 @@ An Android AI assistant chat application featuring the latest Android developmen
 - **Repository Pattern**: Data layer abstraction
 
 ### Networking
-- **Retrofit**: Type-safe HTTP client
-- **OkHttp**: HTTP client with logging interceptor
+- **Retrofit 2.9.0**: Type-safe HTTP client
+- **OkHttp 4.12.0**: HTTP client with logging interceptor
 - **Gson**: JSON serialization/deserialization
 
 ### AI Integration
