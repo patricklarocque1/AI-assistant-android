@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AI Assistant</string>
+    <string name="chat_hint">Type your message...</string>
+    <string name="send">Send</string>
+    <string name="error_message">Failed to get response. Please try again.</string>
+    <string name="network_error">Network error. Please check your connection.</string>
+    <string name="api_key_required">API key is required. Please configure it in the app.</string>
+    <string name="welcome_message">Hello! I\'m your AI assistant. How can I help you today?</string>
+    <string name="settings">Settings</string>
+    <string name="api_key_label">Hugging Face API Key</string>
+    <string name="save">Save</string>
+    <string name="model_label">AI Model</string>
+    <string name="clear_chat">Clear Chat</string>
+</resources>
