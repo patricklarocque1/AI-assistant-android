@@ -18,6 +18,27 @@ Welcome to the Android AI Assistant documentation! This index helps you find the
    - First message examples
    - Common issues and solutions
 
+3. **[ANDROID_STUDIO_SETUP.md](ANDROID_STUDIO_SETUP.md)** - Complete Android Studio setup
+   - Install and configure Android Studio
+   - SDK setup and configuration
+   - Build project step-by-step
+   - Run on device/emulator
+   - Common setup issues
+
+4. **[API_SETUP.md](API_SETUP.md)** - Hugging Face API configuration
+   - Get API token
+   - Configure authentication
+   - Test API connection
+   - Troubleshoot API issues
+   - Model customization
+
+5. **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Quick troubleshooting checklist
+   - Build issues
+   - Runtime problems
+   - API connection errors
+   - Device/emulator issues
+   - Quick fixes
+
 ### For Users
 3. **[FEATURES.md](FEATURES.md)** - Complete features showcase
    - All app features listed
@@ -72,21 +93,27 @@ Welcome to the Android AI Assistant documentation! This index helps you find the
 ### I'm a User
 Start here:
 1. [QUICKSTART.md](QUICKSTART.md) - Get running in 5 minutes
-2. [FEATURES.md](FEATURES.md) - Learn what you can do
-3. [VISUAL_GUIDE.md](VISUAL_GUIDE.md) - Understand the interface
+2. [ANDROID_STUDIO_SETUP.md](ANDROID_STUDIO_SETUP.md) - Full setup guide
+3. [API_SETUP.md](API_SETUP.md) - Configure Hugging Face API
+4. [FEATURES.md](FEATURES.md) - Learn what you can do
+5. [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Fix common issues
+6. [VISUAL_GUIDE.md](VISUAL_GUIDE.md) - Understand the interface
 
 ### I'm a Developer (New to Project)
 Start here:
 1. [README.md](README.md) - Understand the project
-2. [ARCHITECTURE.md](ARCHITECTURE.md) - Learn the structure
-3. [BUILD.md](BUILD.md) - Set up your environment
-4. [CONTRIBUTING.md](CONTRIBUTING.md) - Start contributing
+2. [ANDROID_STUDIO_SETUP.md](ANDROID_STUDIO_SETUP.md) - Set up development environment
+3. [ARCHITECTURE.md](ARCHITECTURE.md) - Learn the structure
+4. [BUILD.md](BUILD.md) - Build instructions
+5. [API_SETUP.md](API_SETUP.md) - API integration details
+6. [CONTRIBUTING.md](CONTRIBUTING.md) - Start contributing
 
 ### I'm a Developer (Experienced)
 Go directly to:
 1. [ARCHITECTURE.md](ARCHITECTURE.md) - Technical details
 2. [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) - Complete overview
 3. [BUILD.md](BUILD.md) - Build commands
+4. [API_SETUP.md](API_SETUP.md) - API configuration
 
 ### I'm a Designer
 Check out:
