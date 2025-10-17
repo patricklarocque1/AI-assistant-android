@@ -1,0 +1,25 @@
+# Virtual environment
+venv/
+env/
+*.pyc
+__pycache__/
+
+# Environment variables
+.env
+
+# Ngrok URL file
+ngrok_url.txt
+
+# Model cache (optional - comment out if you want to version control)
+models/
+*.bin
+*.safetensors
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
