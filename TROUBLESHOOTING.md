@@ -22,8 +22,9 @@ Quick reference for common issues when setting up and using the AI Assistant app
 ### ☑ JDK Version Error
 
 - [ ] Check File → Project Structure → SDK Location
-- [ ] Set JDK to version 17
-- [ ] Download JDK 17 from [adoptium.net](https://adoptium.net/)
+- [ ] Set JDK to version 17 or higher (Java 21 recommended)
+- [ ] Download JDK 21 from [adoptium.net](https://adoptium.net/)
+- [ ] Project uses foojay toolchain resolver for automatic Java download
 
 ### ☑ Build Takes Too Long
 
@@ -34,6 +35,24 @@ Quick reference for common issues when setting up and using the AI Assistant app
   ```
 - [ ] Use `--no-daemon` for one-off builds
 - [ ] Check for antivirus interference
+
+### ☑ Windows File Locking Issues
+
+**"Couldn't delete R.jar" or similar errors:**
+- [ ] Stop Gradle daemons: `./gradlew --stop`
+- [ ] Close Android Studio/IDE completely
+- [ ] Clean build: `./gradlew clean`
+- [ ] Try building again: `./gradlew build`
+- [ ] Check for Windows Defender scanning files
+- [ ] Add project folder to Windows Defender exclusions if needed
+
+### ☑ AGP/Gradle Compatibility Issues
+
+**Version mismatch errors:**
+- [ ] Check AGP version in `gradle/libs.versions.toml` (should be 8.7.3)
+- [ ] Check Gradle version in `gradle/wrapper/gradle-wrapper.properties` (should be 8.11.1)
+- [ ] Ensure Kotlin version is 2.1.0 or compatible
+- [ ] Use kotlin-compose plugin for Kotlin 2.0+ (already configured)
 
 ## Runtime Issues
 

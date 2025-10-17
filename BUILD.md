@@ -5,10 +5,10 @@
 This project uses Gradle Version Catalogs for centralized dependency management. All versions are defined in `gradle/libs.versions.toml`.
 
 ### Current Versions
-- **Gradle**: 8.2
-- **AGP** (Android Gradle Plugin): 8.1.4
-- **Kotlin**: 1.9.0
-- **Compose Compiler**: 1.5.1
+- **Gradle**: 8.11.1
+- **AGP** (Android Gradle Plugin): 8.7.3
+- **Kotlin**: 2.1.0
+- **Compose Compiler**: 2.1.0 (handled by kotlin-compose plugin)
 
 ### Updating Versions
 
@@ -16,9 +16,9 @@ To update dependency versions, edit `gradle/libs.versions.toml`:
 
 ```toml
 [versions]
-agp = "8.1.4"        # Android Gradle Plugin
-kotlin = "1.9.0"      # Kotlin version
-retrofit = "2.9.0"    # Retrofit version
+agp = "8.7.3"        # Android Gradle Plugin
+kotlin = "2.1.0"      # Kotlin version
+retrofit = "2.11.0"   # Retrofit version
 # ... other versions
 ```
 
@@ -121,6 +121,25 @@ android {
    ./gradlew clean --refresh-dependencies
    ```
 3. In Android Studio: File → Invalidate Caches / Restart
+
+### Windows File Locking Issues
+If you encounter "Couldn't delete R.jar" or similar file locking errors:
+1. Stop all Gradle daemons:
+   ```bash
+   ./gradlew --stop
+   ```
+2. Close Android Studio/IDE completely
+3. Clean build directory:
+   ```bash
+   ./gradlew clean
+   ```
+4. Try building again:
+   ```bash
+   ./gradlew build
+   ```
+
+### Java Toolchain Auto-Download
+This project uses the foojay toolchain resolver to automatically download Java 17+ if not found locally. The toolchain is configured in `settings.gradle.kts` and will handle Java installation automatically.
 
 ### Out of Memory
 Add to `gradle.properties`:
