@@ -5,9 +5,9 @@ This guide explains how to set up and test the Hugging Face API connection in th
 ## Overview
 
 The app uses the **Hugging Face Inference API** to communicate with AI models. The current implementation uses:
-- **Model**: `mistralai/Mistral-7B-Instruct-v0.2`
+- **Model**: `microsoft/DialoGPT-medium`
 - **Authentication**: Bearer token (API key)
-- **Endpoint**: `https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2`
+- **Endpoint**: `https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium`
 
 ## API Authentication
 

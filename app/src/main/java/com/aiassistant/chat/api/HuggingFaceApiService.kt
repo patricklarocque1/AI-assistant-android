@@ -17,7 +17,7 @@ interface HuggingFaceApiService {
      * @param request The request containing inputs and parameters
      * @return List of responses from the model
      */
-    @POST("models/mistralai/Mistral-7B-Instruct-v0.2")
+    @POST("models/microsoft/DialoGPT-medium")
     suspend fun query(
         @Header("Authorization") authorization: String,
         @Body request: HuggingFaceRequest

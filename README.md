@@ -37,7 +37,7 @@ An Android AI assistant chat application featuring the latest Android developmen
 
 ### AI Integration
 - **Hugging Face API**: Access to state-of-the-art language models
-- **Mistral-7B-Instruct-v0.2**: Default AI model for chat interactions
+- **DialoGPT-medium**: Microsoft's conversational AI model optimized for chat interactions
 
 ## Project Structure
 
@@ -129,7 +129,7 @@ The app integrates with Hugging Face's Inference API:
 
 ### Endpoint
 ```
-POST https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2
+POST https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium
 ```
 
 ### Request Format
@@ -137,10 +137,12 @@ POST https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v
 {
   "inputs": "Your message here",
   "parameters": {
-    "max_new_tokens": 250,
-    "temperature": 0.7,
-    "top_p": 0.95,
-    "return_full_text": false
+    "max_new_tokens": 100,
+    "temperature": 0.8,
+    "top_p": 0.9,
+    "return_full_text": false,
+    "do_sample": true,
+    "pad_token_id": 50256
   }
 }
 ```

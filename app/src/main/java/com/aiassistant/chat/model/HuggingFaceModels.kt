@@ -8,10 +8,12 @@ data class HuggingFaceRequest(
     val parameters: Parameters = Parameters()
 ) {
     data class Parameters(
-        val max_new_tokens: Int = 250,
-        val temperature: Float = 0.7f,
-        val top_p: Float = 0.95f,
-        val return_full_text: Boolean = false
+        val max_new_tokens: Int = 100,
+        val temperature: Float = 0.8f,
+        val top_p: Float = 0.9f,
+        val return_full_text: Boolean = false,
+        val do_sample: Boolean = true,
+        val pad_token_id: Int = 50256
     )
 }
 
