@@ -17,7 +17,7 @@ import torch
 from pyngrok import ngrok
 from dotenv import load_dotenv
 from pathlib import Path
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 from datetime import datetime
 
 # Load environment variables
