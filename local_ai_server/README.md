@@ -9,6 +9,9 @@ This server hosts a Hugging Face AI model locally on your Ubuntu desktop and exp
 - 🔌 RESTful API compatible with your Android app
 - 🚀 Easy to set up and use
 - 💾 Runs on CPU or GPU (automatically detected)
+- 🔍 **Web Search Integration** - AI can search the web for real-time information (NEW!)
+- 🌐 **Web Interface** - User-friendly browser-based UI (NEW!)
+- 📚 **AI Research Mode** - Get AI-powered answers with web sources (NEW!)
 
 ## Quick Start
 
@@ -42,8 +45,17 @@ The server will:
 2. Start the Flask server
 3. Create an Ngrok tunnel
 4. Display the public URL to use in your Android app
+5. Provide a web interface accessible at the Ngrok URL
 
-### 4. Update Your Android App
+### 4. Access the Web Interface
+
+Open your browser and navigate to the Ngrok URL displayed in the terminal. You'll see a modern web interface with three modes:
+
+- **💬 AI Chat**: Standard conversation with your AI
+- **🔍 Web Search**: Search the web directly
+- **🌐 Search & Chat**: AI researches the web and provides informed answers
+
+### 5. Update Your Android App
 
 Copy the Ngrok URL from the terminal output and update your Android app to use it instead of the Hugging Face API.
 
@@ -71,11 +83,62 @@ Send a chat message and get AI response
 }
 ```
 
+### POST /search (NEW!)
+Perform a web search using DuckDuckGo
+
+**Request:**
+```json
+{
+  "query": "latest AI developments 2024",
+  "max_results": 5
+}
+```
+
+**Response:**
+```json
+{
+  "query": "latest AI developments 2024",
+  "results": [
+    {
+      "title": "Article title",
+      "link": "https://example.com",
+      "snippet": "Article preview text..."
+    }
+  ],
+  "count": 5
+}
+```
+
+### POST /search_and_chat (NEW!)
+Search the web and get an AI-generated answer with sources
+
+**Request:**
+```json
+{
+  "query": "What are the latest quantum computing breakthroughs?"
+}
+```
+
+**Response:**
+```json
+{
+  "query": "What are the latest quantum computing breakthroughs?",
+  "response": "Based on recent web sources, quantum computing has seen...\n\nSources:\n1. Title: URL\n2. Title: URL",
+  "model": "Qwen/Qwen3-0.6B",
+  "device": "cpu"
+}
+```
+
 ### GET /health
 Check server health
 
 ### GET /models
 Get information about the loaded model
+
+### GET /config
+Get current server configuration
+
+For complete documentation on web search features, see [WEB_SEARCH_FEATURES.md](../WEB_SEARCH_FEATURES.md)
 
 ## Recommended Models
 

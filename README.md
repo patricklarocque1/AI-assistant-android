@@ -21,6 +21,9 @@ An Android AI assistant chat application featuring the latest Android developmen
 - 🔒 **Privacy First**: Your conversations stay on your network
 - ⚙️ **Customizable**: Choose from dozens of Hugging Face models
 - 🚀 **Easy Setup**: One-click scripts for server deployment
+- 🔍 **Web Search**: AI can search the web for real-time information (NEW!)
+- 🌐 **Web Interface**: User-friendly browser-based interface (NEW!)
+- 📚 **AI Research**: Ask questions and get AI-powered research with sources (NEW!)
 
 ## Technologies Used
 
@@ -190,6 +193,19 @@ Choose from dozens of models:
 - **Qwen/Qwen2.5-3B-Instruct** - 3B params, excellent with GPU
 - **Many more!** See [model recommendations](LOCAL_SERVER_SETUP.md#model-selection)
 
+#### Web Search & Research (NEW!) 🌐
+The local AI server now includes powerful web search capabilities:
+- **Real-time Information**: AI can search the web using DuckDuckGo
+- **AI Research Mode**: Ask questions and get comprehensive answers with sources
+- **Web Interface**: Access via browser at your Ngrok URL
+- **Privacy-Focused**: No API keys required, uses privacy-focused search
+- **Three Modes**:
+  - 💬 AI Chat - Standard conversation with your AI model
+  - 🔍 Web Search - Direct web search results
+  - 🌐 Search & Chat - AI researches the web and provides informed answers
+
+For detailed information, see [WEB_SEARCH_FEATURES.md](WEB_SEARCH_FEATURES.md)
+
 ### Prerequisites
 - Android Studio Hedgehog or later
 - JDK 8 or later
@@ -242,6 +258,7 @@ On first launch:
 - 🐛 [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues
 
 ### Local AI Server (NEW!)
+- 📘 [WEB_SEARCH_FEATURES.md](WEB_SEARCH_FEATURES.md) - **Web Search & Research Guide** (NEW!)
 - 🚀 [LOCAL_AI_QUICK_REFERENCE.md](LOCAL_AI_QUICK_REFERENCE.md) - **START HERE!**
 - 🖥️ [LOCAL_SERVER_SETUP.md](LOCAL_SERVER_SETUP.md) - Complete server setup
 - 📱 [ANDROID_INTEGRATION.md](ANDROID_INTEGRATION.md) - Integrate with your app
