@@ -202,6 +202,8 @@ class ChatViewModel : ViewModel() {
         updateWelcomeMessage()
         _error.value = null
         _serverStatus.value = null
+        // Clear conversation history in repository for fresh context
+        repository.clearHistory()
     }
     
     /**
