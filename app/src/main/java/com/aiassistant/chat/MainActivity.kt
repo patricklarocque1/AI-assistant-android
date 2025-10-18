@@ -33,20 +33,33 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+enum class Screen {
+    CHAT, SETTINGS, SERVER_CONFIG
+}
+
 @Composable
 fun AIAssistantApp() {
     val viewModel: ChatViewModel = viewModel()
-    var showSettings by remember { mutableStateOf(false) }
+    var currentScreen by remember { mutableStateOf(Screen.CHAT) }
     
-    if (showSettings) {
-        SettingsScreen(
-            viewModel = viewModel,
-            onBackClick = { showSettings = false }
-        )
-    } else {
-        ChatScreen(
-            viewModel = viewModel,
-            onSettingsClick = { showSettings = true }
-        )
+    when (currentScreen) {
+        Screen.CHAT -> {
+            ChatScreen(
+                viewModel = viewModel,
+                onSettingsClick = { currentScreen = Screen.SETTINGS }
+            )
+        }
+        Screen.SETTINGS -> {
+            SettingsScreen(
+                viewModel = viewModel,
+                onBackClick = { currentScreen = Screen.CHAT },
+                onServerConfigClick = { currentScreen = Screen.SERVER_CONFIG }
+            )
+        }
+        Screen.SERVER_CONFIG -> {
+            com.aiassistant.chat.ui.ServerConfigScreen(
+                onBack = { currentScreen = Screen.SETTINGS }
+            )
+        }
     }
 }

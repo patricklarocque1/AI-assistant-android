@@ -21,7 +21,8 @@ import com.aiassistant.chat.viewmodel.ChatViewModel
 @Composable
 fun SettingsScreen(
     viewModel: ChatViewModel,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onServerConfigClick: () -> Unit = {}
 ) {
     val apiKey by viewModel.apiKey.collectAsState()
     val useLocalServer by viewModel.useLocalServer.collectAsState()
@@ -175,6 +176,17 @@ fun SettingsScreen(
                     ) {
                         Text("Save")
                     }
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Server Configuration Button
+                OutlinedButton(
+                    onClick = onServerConfigClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = localServerUrlInput.isNotBlank()
+                ) {
+                    Text("Manage Server Configuration")
                 }
             } else {
                 // Hugging Face Configuration

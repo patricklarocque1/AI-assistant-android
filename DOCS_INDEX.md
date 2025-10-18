@@ -39,6 +39,39 @@ Welcome to the Android AI Assistant documentation! This index helps you find the
    - Device/emulator issues
    - Quick fixes
 
+### Local AI Server Setup
+6. **[LOCAL_SERVER_SETUP.md](LOCAL_SERVER_SETUP.md)** - Local AI server setup with ngrok
+   - Ubuntu server setup
+   - Ngrok tunnel configuration
+   - Model management
+   - Performance optimization
+   - Quick start guide
+
+7. **[LOCAL_MODEL_STORAGE.md](LOCAL_MODEL_STORAGE.md)** - Custom model storage management
+   - Model cache configuration
+   - Storage location setup
+   - Management commands
+   - Performance optimization
+   - Backup and restore
+
+8. **[REMOTE_SERVER_MANAGEMENT.md](REMOTE_SERVER_MANAGEMENT.md)** - NEW: Remote server configuration
+   - Configure server from Android app
+   - Monitor system resources
+   - Switch AI models remotely
+   - Performance tuning
+   - Complete remote control
+
+9. **[LOCAL_AI_QUICK_REFERENCE.md](LOCAL_AI_QUICK_REFERENCE.md)** - Quick command reference
+   - Server commands
+   - Common tasks
+   - Troubleshooting steps
+
+10. **[COMMUNICATION_OPTIMIZATION.md](COMMUNICATION_OPTIMIZATION.md)** - Performance optimization
+   - Network optimization
+   - AI model tuning
+   - Context management
+   - Best practices
+
 ### For Users
 3. **[FEATURES.md](FEATURES.md)** - Complete features showcase
    - All app features listed

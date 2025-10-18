@@ -33,6 +33,7 @@ CORS(app)  # Enable CORS for Android app
 model = None
 tokenizer = None
 device = None
+start_time = None
 
 def setup_model_cache():
     """Setup custom model cache directory if specified"""
@@ -262,6 +263,213 @@ def get_model_info():
         'model_loaded': model is not None
     })
 
+@app.route('/config', methods=['GET'])
+def get_config():
+    """Get current server configuration"""
+    try:
+        cache_dir = os.getenv('MODEL_CACHE_DIR', 'Default (~/.cache/huggingface)')
+        if cache_dir != 'Default (~/.cache/huggingface)':
+            cache_dir = os.path.expanduser(cache_dir)
+            cache_dir = os.path.expandvars(cache_dir)
+        
+        config = {
+            'model_name': os.getenv('MODEL_NAME', 'Qwen/Qwen3-0.6B'),
+            'model_cache_dir': cache_dir,
+            'port': int(os.getenv('PORT', 5000)),
+            'host': os.getenv('HOST', '0.0.0.0'),
+            'use_gpu': os.getenv('USE_GPU', 'true').lower() == 'true',
+            'load_in_8bit': os.getenv('LOAD_IN_8BIT', 'false').lower() == 'true',
+            'load_in_4bit': os.getenv('LOAD_IN_4BIT', 'false').lower() == 'true',
+            'default_max_length': int(os.getenv('DEFAULT_MAX_LENGTH', 100)),
+            'default_temperature': float(os.getenv('DEFAULT_TEMPERATURE', 0.8)),
+            'default_top_p': float(os.getenv('DEFAULT_TOP_P', 0.9)),
+            'has_hf_token': bool(os.getenv('HF_TOKEN')),
+            'device': str(device) if device else 'Not initialized',
+            'model_loaded': model is not None,
+            'cuda_available': torch.cuda.is_available(),
+            'gpu_name': torch.cuda.get_device_name(0) if torch.cuda.is_available() else None
+        }
+        
+        return jsonify(config)
+    except Exception as e:
+        logger.error(f"Error getting config: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/config', methods=['POST'])
+def update_config():
+    """
+    Update server configuration
+    Note: Changes require server restart to take effect
+    """
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No configuration data provided'}), 400
+        
+        # Read current .env file
+        env_path = Path(__file__).parent / '.env'
+        env_content = {}
+        
+        if env_path.exists():
+            with open(env_path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, value = line.split('=', 1)
+                        env_content[key] = value
+        
+        # Update with new values
+        updated_fields = []
+        
+        if 'model_name' in data:
+            env_content['MODEL_NAME'] = data['model_name']
+            updated_fields.append('model_name')
+        
+        if 'model_cache_dir' in data:
+            env_content['MODEL_CACHE_DIR'] = data['model_cache_dir']
+            updated_fields.append('model_cache_dir')
+        
+        if 'use_gpu' in data:
+            env_content['USE_GPU'] = str(data['use_gpu']).lower()
+            updated_fields.append('use_gpu')
+        
+        if 'load_in_8bit' in data:
+            env_content['LOAD_IN_8BIT'] = str(data['load_in_8bit']).lower()
+            updated_fields.append('load_in_8bit')
+        
+        if 'load_in_4bit' in data:
+            env_content['LOAD_IN_4BIT'] = str(data['load_in_4bit']).lower()
+            updated_fields.append('load_in_4bit')
+        
+        if 'default_max_length' in data:
+            env_content['DEFAULT_MAX_LENGTH'] = str(data['default_max_length'])
+            updated_fields.append('default_max_length')
+        
+        if 'default_temperature' in data:
+            env_content['DEFAULT_TEMPERATURE'] = str(data['default_temperature'])
+            updated_fields.append('default_temperature')
+        
+        if 'default_top_p' in data:
+            env_content['DEFAULT_TOP_P'] = str(data['default_top_p'])
+            updated_fields.append('default_top_p')
+        
+        # Write back to .env file
+        with open(env_path, 'w') as f:
+            f.write("# Server Configuration - Updated via API\n")
+            f.write("# Changes require server restart to take effect\n\n")
+            
+            # Write ngrok config
+            if 'NGROK_AUTH_TOKEN' in env_content:
+                f.write(f"NGROK_AUTH_TOKEN={env_content['NGROK_AUTH_TOKEN']}\n\n")
+            
+            # Write model config
+            f.write("# Model Configuration\n")
+            f.write(f"MODEL_NAME={env_content.get('MODEL_NAME', 'Qwen/Qwen3-0.6B')}\n")
+            if 'MODEL_CACHE_DIR' in env_content:
+                f.write(f"MODEL_CACHE_DIR={env_content['MODEL_CACHE_DIR']}\n")
+            f.write("\n")
+            
+            # Write server config
+            f.write("# Server Configuration\n")
+            f.write(f"PORT={env_content.get('PORT', '5000')}\n")
+            f.write(f"HOST={env_content.get('HOST', '0.0.0.0')}\n\n")
+            
+            # Write HF token if exists
+            if 'HF_TOKEN' in env_content:
+                f.write(f"HF_TOKEN={env_content['HF_TOKEN']}\n\n")
+            
+            # Write performance config
+            f.write("# Performance Optimization\n")
+            f.write(f"USE_GPU={env_content.get('USE_GPU', 'true')}\n")
+            f.write(f"LOAD_IN_8BIT={env_content.get('LOAD_IN_8BIT', 'false')}\n")
+            f.write(f"LOAD_IN_4BIT={env_content.get('LOAD_IN_4BIT', 'false')}\n\n")
+            
+            # Write generation defaults
+            f.write("# Generation Defaults\n")
+            f.write(f"DEFAULT_MAX_LENGTH={env_content.get('DEFAULT_MAX_LENGTH', '100')}\n")
+            f.write(f"DEFAULT_TEMPERATURE={env_content.get('DEFAULT_TEMPERATURE', '0.8')}\n")
+            f.write(f"DEFAULT_TOP_P={env_content.get('DEFAULT_TOP_P', '0.9')}\n")
+        
+        logger.info(f"Configuration updated: {updated_fields}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Configuration updated successfully',
+            'updated_fields': updated_fields,
+            'note': 'Restart the server for changes to take effect'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error updating config: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/system', methods=['GET'])
+def get_system_info():
+    """Get system information and resource usage"""
+    try:
+        import psutil
+        import time
+        
+        # Get memory info
+        memory = psutil.virtual_memory()
+        
+        # Get model memory usage if available
+        model_memory = None
+        if model is not None and torch.cuda.is_available() and device.type == 'cuda':
+            model_memory = torch.cuda.memory_allocated(device) / 1024**3  # GB
+            max_memory = torch.cuda.get_device_properties(device).total_memory / 1024**3
+        
+        info = {
+            'uptime_seconds': time.time() - start_time,
+            'cpu_percent': psutil.cpu_percent(interval=1),
+            'memory_total_gb': memory.total / 1024**3,
+            'memory_used_gb': memory.used / 1024**3,
+            'memory_percent': memory.percent,
+            'model_loaded': model is not None,
+            'device': str(device) if device else None,
+            'cuda_available': torch.cuda.is_available()
+        }
+        
+        if model_memory:
+            info['gpu_memory_used_gb'] = model_memory
+            info['gpu_memory_total_gb'] = max_memory
+        
+        return jsonify(info)
+        
+    except ImportError:
+        return jsonify({
+            'error': 'psutil not installed',
+            'note': 'Install with: pip install psutil'
+        }), 500
+    except Exception as e:
+        logger.error(f"Error getting system info: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/restart', methods=['POST'])
+def restart_server():
+    """
+    Trigger server restart
+    Note: This requires external process manager (systemd, supervisor, etc.)
+    """
+    try:
+        logger.info("Restart requested via API")
+        
+        # Signal that restart is needed
+        with open('restart_requested.flag', 'w') as f:
+            f.write('1')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Restart signal sent',
+            'note': 'Server will restart if managed by a process supervisor'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error requesting restart: {e}")
+        return jsonify({'error': str(e)}), 500
+
 def setup_ngrok():
     """Setup ngrok tunnel"""
     ngrok_token = os.getenv('NGROK_AUTH_TOKEN')
@@ -285,6 +493,9 @@ def setup_ngrok():
     return public_url
 
 if __name__ == '__main__':
+    import time
+    start_time = time.time()
+    
     logger.info("Starting AI Model Server...")
     
     # Load the model
