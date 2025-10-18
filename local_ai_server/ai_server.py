@@ -3,17 +3,22 @@
 Local AI Model Server with Ngrok Support
 Hosts a Hugging Face model locally and exposes it via Ngrok
 Enhanced with custom model storage and better performance options
+Includes web search capabilities for online research
 """
 
 import os
 import logging
-from flask import Flask, request, jsonify
+import json
+import re
+from flask import Flask, request, jsonify, render_template_string
 from flask_cors import CORS
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 import torch
 from pyngrok import ngrok
 from dotenv import load_dotenv
 from pathlib import Path
+from duckduckgo_search import DDGS
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -24,6 +29,485 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Web Interface HTML Template
+WEB_INTERFACE_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local AI Server - Web Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 16px;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+        .tab:hover {
+            color: #667eea;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 600;
+        }
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus, .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .input-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .response-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+        .response-box.show {
+            display: block;
+        }
+        .response-box h3 {
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+        .response-box pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .loading.show {
+            display: block;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .search-result {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .search-result h4 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        .search-result a {
+            color: #764ba2;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .search-result a:hover {
+            text-decoration: underline;
+        }
+        .search-result p {
+            margin-top: 10px;
+            color: #666;
+            line-height: 1.5;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .info-item {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            color: white;
+        }
+        .info-item h3 {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        .info-item p {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Local AI Server</h1>
+            <p>Chat with AI, Search the Web, and More!</p>
+        </div>
+
+        <div class="card">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('chat')">💬 AI Chat</button>
+                <button class="tab" onclick="switchTab('search')">🔍 Web Search</button>
+                <button class="tab" onclick="switchTab('research')">🌐 Search & Chat</button>
+                <button class="tab" onclick="switchTab('info')">ℹ️ Server Info</button>
+            </div>
+
+            <!-- Chat Tab -->
+            <div id="chat" class="tab-content active">
+                <h2>AI Chat</h2>
+                <div class="input-group">
+                    <label for="chatMessage">Your Message:</label>
+                    <textarea id="chatMessage" placeholder="Type your message here..."></textarea>
+                </div>
+                <button class="btn" onclick="sendChat()">Send Message</button>
+                
+                <div id="chatLoading" class="loading">
+                    <div class="spinner"></div>
+                    <p>AI is thinking...</p>
+                </div>
+                
+                <div id="chatResponse" class="response-box">
+                    <h3>AI Response:</h3>
+                    <pre id="chatResponseText"></pre>
+                </div>
+            </div>
+
+            <!-- Search Tab -->
+            <div id="search" class="tab-content">
+                <h2>Web Search</h2>
+                <div class="input-group">
+                    <label for="searchQuery">Search Query:</label>
+                    <input type="text" id="searchQuery" placeholder="Enter your search query...">
+                </div>
+                <button class="btn" onclick="performSearch()">Search</button>
+                
+                <div id="searchLoading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Searching...</p>
+                </div>
+                
+                <div id="searchResults" class="response-box">
+                    <h3>Search Results:</h3>
+                    <div id="searchResultsList"></div>
+                </div>
+            </div>
+
+            <!-- Research Tab -->
+            <div id="research" class="tab-content">
+                <h2>Search & Chat (AI Research)</h2>
+                <p style="margin-bottom: 20px; color: #666;">Ask a question and the AI will search the web and provide an informed answer.</p>
+                <div class="input-group">
+                    <label for="researchQuery">Your Question:</label>
+                    <textarea id="researchQuery" placeholder="Ask anything..."></textarea>
+                </div>
+                <button class="btn" onclick="searchAndChat()">Research & Answer</button>
+                
+                <div id="researchLoading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Researching and generating answer...</p>
+                </div>
+                
+                <div id="researchResponse" class="response-box">
+                    <h3>AI Research Response:</h3>
+                    <pre id="researchResponseText"></pre>
+                </div>
+            </div>
+
+            <!-- Info Tab -->
+            <div id="info" class="tab-content">
+                <h2>Server Information</h2>
+                <div id="serverInfo" class="info-grid">
+                    <div class="info-item">
+                        <h3>Status</h3>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+                <button class="btn" onclick="loadServerInfo()" style="margin-top: 20px;">Refresh Info</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Load server info when info tab is opened
+            if (tabName === 'info') {
+                loadServerInfo();
+            }
+        }
+
+        async function sendChat() {
+            const message = document.getElementById('chatMessage').value;
+            if (!message.trim()) {
+                alert('Please enter a message');
+                return;
+            }
+
+            const loading = document.getElementById('chatLoading');
+            const responseBox = document.getElementById('chatResponse');
+            const responseText = document.getElementById('chatResponseText');
+            
+            loading.classList.add('show');
+            responseBox.classList.remove('show');
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    responseText.textContent = data.response;
+                    responseBox.classList.add('show');
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                loading.classList.remove('show');
+            }
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('searchQuery').value;
+            if (!query.trim()) {
+                alert('Please enter a search query');
+                return;
+            }
+
+            const loading = document.getElementById('searchLoading');
+            const resultsBox = document.getElementById('searchResults');
+            const resultsList = document.getElementById('searchResultsList');
+            
+            loading.classList.add('show');
+            resultsBox.classList.remove('show');
+
+            try {
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query, max_results: 5 })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultsList.innerHTML = '';
+                    data.results.forEach(result => {
+                        const div = document.createElement('div');
+                        div.className = 'search-result';
+                        div.innerHTML = `
+                            <h4>${result.title}</h4>
+                            <a href="${result.link}" target="_blank">${result.link}</a>
+                            <p>${result.snippet}</p>
+                        `;
+                        resultsList.appendChild(div);
+                    });
+                    resultsBox.classList.add('show');
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                loading.classList.remove('show');
+            }
+        }
+
+        async function searchAndChat() {
+            const query = document.getElementById('researchQuery').value;
+            if (!query.trim()) {
+                alert('Please enter a question');
+                return;
+            }
+
+            const loading = document.getElementById('researchLoading');
+            const responseBox = document.getElementById('researchResponse');
+            const responseText = document.getElementById('researchResponseText');
+            
+            loading.classList.add('show');
+            responseBox.classList.remove('show');
+
+            try {
+                const response = await fetch('/search_and_chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    responseText.textContent = data.response;
+                    responseBox.classList.add('show');
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                loading.classList.remove('show');
+            }
+        }
+
+        async function loadServerInfo() {
+            const infoGrid = document.getElementById('serverInfo');
+            infoGrid.innerHTML = '<div class="info-item"><h3>Loading...</h3><p>Please wait</p></div>';
+
+            try {
+                const response = await fetch('/config');
+                const data = await response.json();
+                
+                infoGrid.innerHTML = `
+                    <div class="info-item">
+                        <h3>🤖 Model</h3>
+                        <p>${data.model_name}</p>
+                    </div>
+                    <div class="info-item">
+                        <h3>💻 Device</h3>
+                        <p>${data.device}</p>
+                    </div>
+                    <div class="info-item">
+                        <h3>🔋 Status</h3>
+                        <p>${data.model_loaded ? 'Ready' : 'Loading'}</p>
+                    </div>
+                    <div class="info-item">
+                        <h3>🌐 Features</h3>
+                        <p>AI Chat, Web Search, Research</p>
+                    </div>
+                `;
+            } catch (error) {
+                infoGrid.innerHTML = `<div class="info-item"><h3>Error</h3><p>${error.message}</p></div>`;
+            }
+        }
+
+        // Load server info on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            // Initial load not needed unless on info tab
+        });
+    </script>
+</body>
+</html>
+"""
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -172,33 +656,119 @@ def generate_response(prompt, max_length=None, temperature=None, top_p=None):
         logger.error(f"Error generating response: {e}")
         raise
 
+def search_web(query, max_results=5):
+    """
+    Perform web search using DuckDuckGo
+    Returns a list of search results with title, link, and snippet
+    """
+    try:
+        logger.info(f"Performing web search for: {query}")
+        
+        with DDGS() as ddgs:
+            results = []
+            for r in ddgs.text(query, max_results=max_results):
+                results.append({
+                    'title': r.get('title', ''),
+                    'link': r.get('href', ''),
+                    'snippet': r.get('body', '')
+                })
+            
+            logger.info(f"Found {len(results)} search results")
+            return results
+            
+    except Exception as e:
+        logger.error(f"Error performing web search: {e}")
+        return []
+
+def search_and_summarize(query, user_question):
+    """
+    Search the web and use AI to summarize the results
+    """
+    try:
+        # Perform web search
+        search_results = search_web(query, max_results=5)
+        
+        if not search_results:
+            return "I couldn't find any information on the web about that topic."
+        
+        # Format search results for the AI
+        context = f"User question: {user_question}\n\nWeb search results:\n\n"
+        for i, result in enumerate(search_results, 1):
+            context += f"{i}. {result['title']}\n{result['snippet']}\n\n"
+        
+        # Add instruction for the AI
+        prompt = f"{context}\nBased on the search results above, please provide a comprehensive answer to the user's question. Include relevant information from the search results and cite sources when appropriate."
+        
+        # Generate AI response using the search context
+        response = generate_response(prompt, max_length=300, temperature=0.7, top_p=0.9)
+        
+        # Append sources
+        sources = "\n\nSources:\n"
+        for i, result in enumerate(search_results[:3], 1):
+            sources += f"{i}. {result['title']}: {result['link']}\n"
+        
+        return response + sources
+        
+    except Exception as e:
+        logger.error(f"Error in search_and_summarize: {e}")
+        return f"Error performing web search: {str(e)}"
+
 @app.route('/', methods=['GET'])
 def home():
-    """Home page endpoint"""
-    return jsonify({
-        'name': 'Local AI Model Server',
-        'version': '1.0.0',
-        'status': 'running',
-        'model': os.getenv('MODEL_NAME', 'Unknown'),
-        'device': str(device) if device else None,
-        'endpoints': {
-            'health': '/health (GET)',
-            'models': '/models (GET)',
-            'chat': '/chat (POST)'
-        },
-        'usage': {
-            'chat': {
-                'method': 'POST',
-                'url': '/chat',
-                'body': {
-                    'message': 'Your message here',
-                    'max_length': 512,
-                    'temperature': 0.7,
-                    'top_p': 0.9
+    """Home page endpoint with web interface"""
+    # Check if request is from a browser (wants HTML) or API (wants JSON)
+    if request.headers.get('Accept', '').find('text/html') != -1:
+        # Return web interface
+        return render_template_string(WEB_INTERFACE_HTML)
+    else:
+        # Return API info
+        return jsonify({
+            'name': 'Local AI Model Server with Web Search',
+            'version': '2.0.0',
+            'status': 'running',
+            'model': os.getenv('MODEL_NAME', 'Unknown'),
+            'device': str(device) if device else None,
+            'features': [
+                'AI Chat',
+                'Web Search',
+                'Search & Summarize'
+            ],
+            'endpoints': {
+                'health': '/health (GET)',
+                'models': '/models (GET)',
+                'chat': '/chat (POST)',
+                'search': '/search (POST)',
+                'search_and_chat': '/search_and_chat (POST)'
+            },
+            'usage': {
+                'chat': {
+                    'method': 'POST',
+                    'url': '/chat',
+                    'body': {
+                        'message': 'Your message here',
+                        'max_length': 512,
+                        'temperature': 0.7,
+                        'top_p': 0.9
+                    }
+                },
+                'search': {
+                    'method': 'POST',
+                    'url': '/search',
+                    'body': {
+                        'query': 'Your search query',
+                        'max_results': 5
+                    }
+                },
+                'search_and_chat': {
+                    'method': 'POST',
+                    'url': '/search_and_chat',
+                    'body': {
+                        'query': 'Your question',
+                        'search_query': 'Optional specific search query'
+                    }
                 }
             }
-        }
-    })
+        })
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -252,6 +822,75 @@ def chat():
         
     except Exception as e:
         logger.error(f"Error in chat endpoint: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/search', methods=['POST'])
+def search():
+    """
+    Web search endpoint
+    Expected JSON body:
+    {
+        "query": "Search query",
+        "max_results": 5  // optional
+    }
+    """
+    try:
+        data = request.json
+        
+        if not data or 'query' not in data:
+            return jsonify({'error': 'Missing query in request'}), 400
+        
+        query = data['query']
+        max_results = data.get('max_results', 5)
+        
+        logger.info(f"Search query: {query}")
+        
+        # Perform web search
+        results = search_web(query, max_results=max_results)
+        
+        return jsonify({
+            'query': query,
+            'results': results,
+            'count': len(results)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in search endpoint: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/search_and_chat', methods=['POST'])
+def search_and_chat():
+    """
+    Search the web and use AI to answer based on results
+    Expected JSON body:
+    {
+        "query": "User's question",
+        "search_query": "Optional specific search query"
+    }
+    """
+    try:
+        data = request.json
+        
+        if not data or 'query' not in data:
+            return jsonify({'error': 'Missing query in request'}), 400
+        
+        user_query = data['query']
+        search_query = data.get('search_query', user_query)
+        
+        logger.info(f"Search and chat query: {user_query}")
+        
+        # Search and summarize
+        response = search_and_summarize(search_query, user_query)
+        
+        return jsonify({
+            'query': user_query,
+            'response': response,
+            'model': os.getenv('MODEL_NAME', 'Unknown'),
+            'device': str(device)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in search_and_chat endpoint: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/models', methods=['GET'])
