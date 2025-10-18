@@ -711,7 +711,7 @@ def search_and_summarize(query, user_question):
         
     except Exception as e:
         logger.error(f"Error in search_and_summarize: {e}")
-        return f"Error performing web search: {str(e)}"
+        return "I encountered an error while searching the web. Please try again later."
 
 @app.route('/', methods=['GET'])
 def home():
@@ -822,7 +822,7 @@ def chat():
         
     except Exception as e:
         logger.error(f"Error in chat endpoint: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred while processing your message'}), 500
 
 @app.route('/search', methods=['POST'])
 def search():
@@ -856,7 +856,7 @@ def search():
         
     except Exception as e:
         logger.error(f"Error in search endpoint: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred while searching the web'}), 500
 
 @app.route('/search_and_chat', methods=['POST'])
 def search_and_chat():
@@ -891,7 +891,7 @@ def search_and_chat():
         
     except Exception as e:
         logger.error(f"Error in search_and_chat endpoint: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred while researching your query'}), 500
 
 @app.route('/models', methods=['GET'])
 def get_model_info():
@@ -932,7 +932,7 @@ def get_config():
         return jsonify(config)
     except Exception as e:
         logger.error(f"Error getting config: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred while retrieving server configuration'}), 500
 
 @app.route('/config', methods=['POST'])
 def update_config():
@@ -1042,7 +1042,7 @@ def update_config():
         logger.error(f"Error updating config: {e}")
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred while updating server configuration'}), 500
 
 @app.route('/system', methods=['GET'])
 def get_system_info():
@@ -1084,7 +1084,7 @@ def get_system_info():
         }), 500
     except Exception as e:
         logger.error(f"Error getting system info: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred while retrieving system information'}), 500
 
 @app.route('/restart', methods=['POST'])
 def restart_server():
@@ -1107,7 +1107,7 @@ def restart_server():
         
     except Exception as e:
         logger.error(f"Error requesting restart: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred while requesting server restart'}), 500
 
 def setup_ngrok():
     """Setup ngrok tunnel"""
