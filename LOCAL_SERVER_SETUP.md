@@ -11,6 +11,18 @@ This guide will help you set up your own AI model server on your Ubuntu desktop 
 └─────────────────┘         └──────────────┘         └─────────────┘
 ```
 
+**Benefits of Local Hosting**:
+- 💰 **No API costs** - Use your own hardware
+- 🚀 **Better performance** - GPU acceleration  
+- 🔒 **Full privacy** - Data stays on your machine
+- ⚙️ **Full control** - Customize models and parameters
+- 📁 **Organized storage** - Manage models in custom folders
+
+## Quick Links
+
+- **📁 Model Storage Management**: See [LOCAL_MODEL_STORAGE.md](LOCAL_MODEL_STORAGE.md) for organizing models in custom folders
+- **📝 Quick Reference**: See [LOCAL_AI_QUICK_REFERENCE.md](LOCAL_AI_QUICK_REFERENCE.md) for common commands
+
 ## Part 1: Server Setup
 
 ### Step 1: Get Ngrok Token
@@ -39,15 +51,39 @@ Edit the `.env` file:
 nano .env
 ```
 
+**Required Settings**:
+
 Add your Ngrok token:
 ```
 NGROK_AUTH_TOKEN=your_actual_token_here
 ```
 
-You can also choose a different model (optional):
+**Optional Settings**:
+
+Choose a model:
 ```
 MODEL_NAME=Qwen/Qwen3-0.6B
 ```
+
+**Custom Model Storage** (NEW):
+Organize models in a specific folder on your desktop:
+```
+MODEL_CACHE_DIR=/home/username/ai-models
+```
+
+Or use the interactive setup:
+```bash
+python manage_models.py setup
+```
+
+**Performance Optimizations**:
+```
+USE_GPU=true              # Enable GPU acceleration (if available)
+LOAD_IN_8BIT=false        # Enable for lower memory usage
+HF_TOKEN=your_hf_token    # Required for Hugging Face Pro models
+```
+
+See [LOCAL_MODEL_STORAGE.md](LOCAL_MODEL_STORAGE.md) for detailed model management.
 
 ### Step 4: Start the Server
 

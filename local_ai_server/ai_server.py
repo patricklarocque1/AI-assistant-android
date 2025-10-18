@@ -2,16 +2,18 @@
 """
 Local AI Model Server with Ngrok Support
 Hosts a Hugging Face model locally and exposes it via Ngrok
+Enhanced with custom model storage and better performance options
 """
 
 import os
 import logging
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 import torch
 from pyngrok import ngrok
 from dotenv import load_dotenv
+from pathlib import Path
 
 # Load environment variables
 load_dotenv()
@@ -32,48 +34,115 @@ model = None
 tokenizer = None
 device = None
 
+def setup_model_cache():
+    """Setup custom model cache directory if specified"""
+    cache_dir = os.getenv('MODEL_CACHE_DIR')
+    if cache_dir:
+        # Expand ~ and environment variables
+        cache_dir = os.path.expanduser(cache_dir)
+        cache_dir = os.path.expandvars(cache_dir)
+        
+        # Create directory if it doesn't exist
+        Path(cache_dir).mkdir(parents=True, exist_ok=True)
+        
+        # Set HuggingFace cache environment variables
+        os.environ['TRANSFORMERS_CACHE'] = cache_dir
+        os.environ['HF_HOME'] = cache_dir
+        
+        logger.info(f"Using custom model cache directory: {cache_dir}")
+        return cache_dir
+    else:
+        logger.info("Using default HuggingFace cache directory")
+        return None
+
 def load_model():
-    """Load the AI model and tokenizer"""
+    """Load the AI model and tokenizer with performance optimizations"""
     global model, tokenizer, device
+    
+    # Setup model cache
+    cache_dir = setup_model_cache()
     
     model_name = os.getenv('MODEL_NAME', 'Qwen/Qwen3-0.6B')
     hf_token = os.getenv('HF_TOKEN', None)
+    use_gpu = os.getenv('USE_GPU', 'true').lower() == 'true'
+    load_in_8bit = os.getenv('LOAD_IN_8BIT', 'false').lower() == 'true'
+    load_in_4bit = os.getenv('LOAD_IN_4BIT', 'false').lower() == 'true'
     
     logger.info(f"Loading model: {model_name}")
+    if cache_dir:
+        logger.info(f"Model storage location: {cache_dir}")
     
     # Determine device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    logger.info(f"Using device: {device}")
+    if use_gpu and torch.cuda.is_available():
+        device = torch.device('cuda')
+        logger.info(f"Using GPU: {torch.cuda.get_device_name(0)}")
+    else:
+        device = torch.device('cpu')
+        logger.info("Using CPU")
     
     try:
         # Load tokenizer
         tokenizer = AutoTokenizer.from_pretrained(
             model_name,
             token=hf_token,
-            trust_remote_code=True
+            trust_remote_code=True,
+            cache_dir=cache_dir
         )
+        
+        # Configure quantization if requested
+        quantization_config = None
+        if load_in_8bit or load_in_4bit:
+            try:
+                quantization_config = BitsAndBytesConfig(
+                    load_in_8bit=load_in_8bit,
+                    load_in_4bit=load_in_4bit,
+                )
+                logger.info(f"Using quantization: {'8-bit' if load_in_8bit else '4-bit'}")
+            except ImportError:
+                logger.warning("bitsandbytes not available, loading in full precision")
+                quantization_config = None
         
         # Load model
+        model_kwargs = {
+            'token': hf_token,
+            'trust_remote_code': True,
+            'low_cpu_mem_usage': True,
+            'cache_dir': cache_dir
+        }
+        
+        if quantization_config:
+            model_kwargs['quantization_config'] = quantization_config
+        else:
+            model_kwargs['torch_dtype'] = torch.float16 if device.type == 'cuda' else torch.float32
+        
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            token=hf_token,
-            trust_remote_code=True,
-            torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
-            low_cpu_mem_usage=True
+            **model_kwargs
         )
         
-        model.to(device)
+        if not quantization_config:
+            model.to(device)
+        
         model.eval()
         
         logger.info("Model loaded successfully!")
+        logger.info(f"Model parameters: {sum(p.numel() for p in model.parameters()) / 1e6:.2f}M")
+        
         return True
         
     except Exception as e:
         logger.error(f"Error loading model: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
-def generate_response(prompt, max_length=512, temperature=0.7, top_p=0.9):
+def generate_response(prompt, max_length=None, temperature=None, top_p=None):
     """Generate a response from the model"""
+    # Use defaults from environment if not specified
+    max_length = max_length or int(os.getenv('DEFAULT_MAX_LENGTH', 100))
+    temperature = temperature or float(os.getenv('DEFAULT_TEMPERATURE', 0.8))
+    top_p = top_p or float(os.getenv('DEFAULT_TOP_P', 0.9))
+    
     try:
         # Encode input
         inputs = tokenizer(prompt, return_tensors="pt").to(device)
